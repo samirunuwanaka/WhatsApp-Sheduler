@@ -9,6 +9,10 @@ data class ScheduleEntity(
     val type: ScheduleType,
     val title: String,
     val message: String,
+    /** Caption shown with a status image. Kept separate from message for future status media types. */
+    val caption: String = "",
+    /** Persisted content URI for an optional status image. */
+    val mediaUri: String? = null,
     /** Digits with country code, no + or spaces. Empty for status. */
     val phoneNumber: String = "",
     /** Epoch millis when the window opens. */

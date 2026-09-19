@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.content.ClipData
 import com.statusflow.scheduler.data.ScheduleEntity
 import com.statusflow.scheduler.data.ScheduleType
 
@@ -57,8 +58,19 @@ object WhatsAppSender {
             }
             ScheduleType.STATUS -> {
                 Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, entity.message)
+                    val media = entity.mediaUri?.let(Uri::parse)
+                    type = if (media != null) {
+                        context.contentResolver.getType(media) ?: "image/*"
+                    } else {
+                        "text/plain"
+                    }
+                    if (media != null) {
+                        putExtra(Intent.EXTRA_STREAM, media)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        clipData = ClipData.newRawUri("status-image", media)
+                    }
+                    val caption = entity.caption.ifBlank { entity.message }
+                    if (caption.isNotBlank()) putExtra(Intent.EXTRA_TEXT, caption)
                     setPackage(pkg)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     // WhatsApp status share target when available

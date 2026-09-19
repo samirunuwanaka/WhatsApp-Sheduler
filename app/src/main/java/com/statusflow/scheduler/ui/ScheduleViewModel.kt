@@ -26,6 +26,8 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
         type: ScheduleType,
         title: String,
         message: String,
+        caption: String,
+        mediaUri: String?,
         phone: String,
         startMillis: Long,
         endMillis: Long
@@ -36,6 +38,8 @@ class ScheduleViewModel(app: Application) : AndroidViewModel(app) {
                 type = type,
                 title = title.ifBlank { if (type == ScheduleType.STATUS) "Status" else "Message" },
                 message = message.trim(),
+                caption = caption.trim(),
+                mediaUri = mediaUri,
                 phoneNumber = phone.filter { it.isDigit() || it == '+' }.filter { it.isDigit() },
                 scheduleStartMillis = startMillis,
                 scheduleEndMillis = endMillis,

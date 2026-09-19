@@ -2,6 +2,8 @@ package com.statusflow.scheduler.data
 
 import android.content.Context
 import androidx.room.Database
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
@@ -21,7 +23,7 @@ class Converters {
     fun toStatus(value: String): ScheduleStatus = ScheduleStatus.valueOf(value)
 }
 
-@Database(entities = [ScheduleEntity::class], version = 1, exportSchema = false)
+@Database(entities = [ScheduleEntity::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scheduleDao(): ScheduleDao
@@ -35,7 +37,15 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "statusflow.db"
-                ).build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2).build().also { instance = it }
+            }
+        }
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE schedules ADD COLUMN caption TEXT NOT NULL DEFAULT ''")
+                database.execSQL("ALTER TABLE schedules ADD COLUMN mediaUri TEXT")
+                database.execSQL("UPDATE schedules SET caption = message WHERE type = 'STATUS'")
             }
         }
     }

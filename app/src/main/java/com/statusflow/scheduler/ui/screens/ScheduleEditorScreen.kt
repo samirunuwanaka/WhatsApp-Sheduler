@@ -2,6 +2,11 @@ package com.statusflow.scheduler.ui.screens
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.Manifest
+import android.content.Intent
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,12 +19,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -63,6 +71,8 @@ fun ScheduleEditorScreen(
         type: ScheduleType,
         title: String,
         message: String,
+        caption: String,
+        mediaUri: String?,
         phone: String,
         startMillis: Long,
         endMillis: Long
@@ -74,7 +84,47 @@ fun ScheduleEditorScreen(
     var type by remember { mutableStateOf(initial?.type ?: ScheduleType.MESSAGE) }
     var title by remember { mutableStateOf(initial?.title.orEmpty()) }
     var message by remember { mutableStateOf(initial?.message.orEmpty()) }
+    var caption by remember { mutableStateOf(initial?.caption.orEmpty()) }
+    var mediaUri by remember { mutableStateOf(initial?.mediaUri) }
     var phone by remember { mutableStateOf(initial?.phoneNumber.orEmpty()) }
+    val imagePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        }
+        mediaUri = uri.toString()
+    }
+    val contactPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val contactUri = result.data?.data ?: return@rememberLauncherForActivityResult
+        context.contentResolver.query(
+            contactUri,
+            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) phone = cursor.getString(0).orEmpty()
+        }
+    }
+    val contactsPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            contactPicker.launch(
+                Intent(
+                    Intent.ACTION_PICK,
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+                )
+            )
+        }
+    }
 
     val defaultStart = System.currentTimeMillis() + 15 * 60_000L
     val defaultEnd = defaultStart + 60 * 60_000L
@@ -148,23 +198,65 @@ fun ScheduleEditorScreen(
         if (type == ScheduleType.MESSAGE) {
             Spacer(Modifier.height(14.dp))
             FieldLabel("Phone (country code, digits only)")
-            SfTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                placeholder = "9198XXXXXXXX",
-                keyboardType = KeyboardType.Phone
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SfTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    placeholder = "9198XXXXXXXX",
+                    keyboardType = KeyboardType.Phone,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = {
+                        contactsPermission.launch(Manifest.permission.READ_CONTACTS)
+                    }
+                ) {
+                    Icon(Icons.Default.Contacts, contentDescription = "Choose contact", tint = Leaf)
+                }
+            }
         }
 
         Spacer(Modifier.height(14.dp))
-        FieldLabel(if (type == ScheduleType.STATUS) "Status text" else "Message")
-        SfTextField(
-            value = message,
-            onValueChange = { message = it },
-            placeholder = "Write what should go out…",
-            singleLine = false,
-            minLines = 4
-        )
+        if (type == ScheduleType.STATUS) {
+            FieldLabel("Caption")
+            SfTextField(
+                value = caption,
+                onValueChange = { caption = it },
+                placeholder = "Write a caption (optional)",
+                singleLine = false,
+                minLines = 3
+            )
+            Spacer(Modifier.height(14.dp))
+            Button(
+                onClick = { imagePicker.launch(arrayOf("image/*")) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ForestNight.copy(alpha = 0.75f),
+                    contentColor = Mist
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Image, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(if (mediaUri == null) "Add status photo" else "Change status photo")
+            }
+            if (mediaUri != null) {
+                Text(
+                    "Photo selected",
+                    color = SoftMoss,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        } else {
+            FieldLabel("Message")
+            SfTextField(
+                value = message,
+                onValueChange = { message = it },
+                placeholder = "Write what should go out…",
+                singleLine = false,
+                minLines = 4
+            )
+        }
 
         Spacer(Modifier.height(18.dp))
         TimeBlock(
@@ -192,7 +284,9 @@ fun ScheduleEditorScreen(
         Button(
             onClick = {
                 when {
-                    message.isBlank() -> error = "Message cannot be empty"
+                    type == ScheduleType.MESSAGE && message.isBlank() -> error = "Message cannot be empty"
+                    type == ScheduleType.STATUS && caption.isBlank() && mediaUri == null ->
+                        error = "Add a caption or photo"
                     type == ScheduleType.MESSAGE && phone.filter { it.isDigit() }.length < 8 ->
                         error = "Enter a valid phone with country code"
                     endMillis <= startMillis -> error = "Schedule end must be after schedule start"
@@ -203,6 +297,8 @@ fun ScheduleEditorScreen(
                             type,
                             title,
                             message,
+                            caption,
+                            mediaUri,
                             phone,
                             startMillis,
                             endMillis
@@ -261,6 +357,7 @@ private fun SfTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
+    modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     minLines: Int = 1,
     keyboardType: KeyboardType = KeyboardType.Text
@@ -268,7 +365,7 @@ private fun SfTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         placeholder = { Text(placeholder, color = SoftMoss.copy(alpha = 0.7f)) },
         singleLine = singleLine,
         minLines = minLines,

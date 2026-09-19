@@ -117,8 +117,8 @@ fun StatusFlowAppRoot(
             ScheduleEditorScreen(
                 initial = editorTarget,
                 onDismiss = { showEditor = false },
-                onSave = { id, type, title, message, phone, start, end ->
-                    viewModel.save(id, type, title, message, phone, start, end)
+                onSave = { id, type, title, message, caption, mediaUri, phone, start, end ->
+                    viewModel.save(id, type, title, message, caption, mediaUri, phone, start, end)
                     showEditor = false
                 }
             )
@@ -325,7 +325,11 @@ private fun ScheduleRow(
                 StatusChip(item.status)
             }
             Text(
-                text = item.message,
+                text = if (item.type == ScheduleType.STATUS) {
+                    item.caption.ifBlank { if (item.mediaUri != null) "Photo status" else item.message }
+                } else {
+                    item.message
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = SoftMoss,
                 maxLines = 2,

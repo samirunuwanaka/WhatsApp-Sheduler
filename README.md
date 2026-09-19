@@ -6,7 +6,8 @@ Personal WhatsApp **message** and **status** scheduler for Android. Schedules ar
 
 ## Features
 
-- Schedule **Message** (phone + text) or **Status** (text)
+- Schedule **Message** (choose a phone number from Contacts or enter it manually)
+- Schedule **Status** with an optional caption and photo from device storage
 - **Schedule start** and **Schedule end** window
 - Exact alarms that can wake the device while locked
 - Boot catch-up after the phone was turned off
