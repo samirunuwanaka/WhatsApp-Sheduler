@@ -1,5 +1,12 @@
 # StatusFlow
 
+<div style="display: flex; gap: 8px; flex-wrap: nowrap;">
+  <img src="./test/WhatsApp Image 2026-09-19 at 08.58.43 (1).jpeg" style="width: 24%; height: auto;" alt="Image 1" />
+  <img src="./test/WhatsApp Image 2026-09-19 at 08.58.43.jpeg" style="width: 24%; height: auto;" alt="Image 2" />
+  <img src="./test/WhatsApp Image 2026-09-19 at 08.58.44 (1).jpeg" style="width: 24%; height: auto;" alt="Image 3" />
+  <img src="./test/WhatsApp Image 2026-09-19 at 08.58.44.jpeg" style="width: 24%; height: auto;" alt="Image 4" />
+</div>
+
 Personal WhatsApp **message** and **status** scheduler for Android. Schedules are stored on the phone, alarms fire while the screen is locked, and if the phone was powered off, StatusFlow catches up **as long as you are still inside the schedule window** (schedule start → schedule end).
 
 > WhatsApp itself needs mobile data or Wi‑Fi to *deliver* a message. StatusFlow keeps working offline for planning and retries inside your selected period once the network returns.
