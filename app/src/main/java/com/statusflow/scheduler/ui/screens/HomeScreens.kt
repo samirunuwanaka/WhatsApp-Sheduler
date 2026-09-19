@@ -95,7 +95,7 @@ fun StatusFlowAppRoot(
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 40.dp, end = (-20).dp)
+                .padding(top = 40.dp)
                 .size(220.dp)
                 .background(
                     Brush.radialGradient(listOf(Leaf.copy(alpha = 0.25f), ForestNight.copy(alpha = 0f))),
@@ -105,7 +105,7 @@ fun StatusFlowAppRoot(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(bottom = 80.dp, start = (-40).dp)
+                .padding(bottom = 80.dp)
                 .size(260.dp)
                 .background(
                     Brush.radialGradient(listOf(WarmSand.copy(alpha = 0.12f), ForestNight.copy(alpha = 0f))),
