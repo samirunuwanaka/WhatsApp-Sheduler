@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">StatusFlow</string>
+    <string name="accessibility_service_description">StatusFlow uses Accessibility to tap Send in WhatsApp after a scheduled message or status is opened, so delivery can continue while the phone is locked.</string>
+    <string name="channel_dispatch">Scheduled dispatch</string>
+    <string name="channel_dispatch_desc">Alerts when a scheduled WhatsApp action is about to run</string>
+</resources>
