@@ -1,6 +1,9 @@
 package com.statusflow.scheduler.whatsapp
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
+import android.graphics.Path
+import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
@@ -88,8 +91,10 @@ class AutoSendAccessibilityService : AccessibilityService() {
         // Common WhatsApp send button resource ids across versions
         val ids = listOf(
             "com.whatsapp:id/send",
+            "com.whatsapp:id/send_button",
             "com.whatsapp:id/conversation_entry_action_button",
             "com.whatsapp.w4b:id/send",
+            "com.whatsapp.w4b:id/send_button",
             "com.whatsapp.w4b:id/conversation_entry_action_button"
         )
         for (id in ids) {
@@ -146,7 +151,19 @@ class AutoSendAccessibilityService : AccessibilityService() {
             }
             current = current.parent
         }
-        return false
+        val bounds = Rect()
+        node.getBoundsInScreen(bounds)
+        if (bounds.isEmpty || !node.isVisibleToUser) return false
+        val path = Path().apply {
+            moveTo(bounds.centerX().toFloat(), bounds.centerY().toFloat())
+        }
+        return dispatchGesture(
+            GestureDescription.Builder()
+                .addStroke(GestureDescription.StrokeDescription(path, 0, 80))
+                .build(),
+            null,
+            null
+        )
     }
 
     private fun traverse(node: AccessibilityNodeInfo, matcher: (AccessibilityNodeInfo) -> Boolean): Boolean {
@@ -167,6 +184,6 @@ class AutoSendAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val RETRY_DELAY_MS = 500L
-        private const val MAX_ATTEMPTS = 60
+        private const val MAX_ATTEMPTS = 120
     }
 }

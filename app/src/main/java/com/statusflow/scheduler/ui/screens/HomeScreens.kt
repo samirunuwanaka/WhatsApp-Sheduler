@@ -343,7 +343,8 @@ private fun ScheduleRow(
                 Icon(Icons.Default.AccessTime, contentDescription = null, tint = WarmSand, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "${formatter.format(Date(item.scheduleStartMillis))}  →  ${formatter.format(Date(item.scheduleEndMillis))}",
+                    text = "${formatter.format(Date(item.scheduleStartMillis))}  →  " +
+                        if (item.scheduleEndMillis == Long.MAX_VALUE) "No end time" else formatter.format(Date(item.scheduleEndMillis)),
                     style = MaterialTheme.typography.labelLarge,
                     color = WarmSand
                 )

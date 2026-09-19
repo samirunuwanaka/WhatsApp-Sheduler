@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -130,6 +131,7 @@ fun ScheduleEditorScreen(
     val defaultEnd = defaultStart + 60 * 60_000L
     var startMillis by remember { mutableLongStateOf(initial?.scheduleStartMillis ?: defaultStart) }
     var endMillis by remember { mutableLongStateOf(initial?.scheduleEndMillis ?: defaultEnd) }
+    var noEndTime by remember { mutableStateOf(initial?.scheduleEndMillis == Long.MAX_VALUE) }
     var error by remember { mutableStateOf<String?>(null) }
 
     fun pickDateTime(current: Long, onPicked: (Long) -> Unit) {
@@ -265,11 +267,17 @@ fun ScheduleEditorScreen(
             onClick = { pickDateTime(startMillis) { startMillis = it } }
         )
         Spacer(Modifier.height(12.dp))
-        TimeBlock(
-            label = "Schedule end",
-            value = formatter.format(Date(endMillis)),
-            onClick = { pickDateTime(endMillis) { endMillis = it } }
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = noEndTime, onCheckedChange = { noEndTime = it })
+            Text("No end time", color = Mist)
+        }
+        if (!noEndTime) {
+            TimeBlock(
+                label = "Schedule end",
+                value = formatter.format(Date(endMillis)),
+                onClick = { pickDateTime(endMillis) { endMillis = it } }
+            )
+        }
 
         if (error != null) {
             Text(
@@ -289,7 +297,7 @@ fun ScheduleEditorScreen(
                         error = "Add a caption or photo"
                     type == ScheduleType.MESSAGE && phone.filter { it.isDigit() }.length < 8 ->
                         error = "Enter a valid phone with country code"
-                    endMillis <= startMillis -> error = "Schedule end must be after schedule start"
+                    !noEndTime && endMillis <= startMillis -> error = "Schedule end must be after schedule start"
                     else -> {
                         error = null
                         onSave(
@@ -301,7 +309,7 @@ fun ScheduleEditorScreen(
                             mediaUri,
                             phone,
                             startMillis,
-                            endMillis
+                            if (noEndTime) Long.MAX_VALUE else endMillis
                         )
                     }
                 }

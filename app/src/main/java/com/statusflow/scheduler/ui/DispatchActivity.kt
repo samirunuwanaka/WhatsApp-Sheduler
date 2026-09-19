@@ -87,7 +87,9 @@ class DispatchActivity : ComponentActivity() {
                     }
                     result.onSuccess { waIntent ->
                         startActivity(waIntent)
-                        delay(400)
+                        // Keep the handoff activity alive while WhatsApp creates its UI;
+                        // the accessibility service continues independently in the background.
+                        delay(1500)
                         finish()
                     }.onFailure { err ->
                         message = err.message ?: "Failed"

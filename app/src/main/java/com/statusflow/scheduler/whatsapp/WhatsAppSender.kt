@@ -53,7 +53,11 @@ object WhatsAppSender {
                 )
                 Intent(Intent.ACTION_VIEW, uri).apply {
                     setPackage(pkg)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                       addFlags(
+                           Intent.FLAG_ACTIVITY_NEW_TASK or
+                               Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                               Intent.FLAG_ACTIVITY_SINGLE_TOP
+                       )
                 }
             }
             ScheduleType.STATUS -> {
@@ -72,7 +76,11 @@ object WhatsAppSender {
                     val caption = entity.caption.ifBlank { entity.message }
                     if (caption.isNotBlank()) putExtra(Intent.EXTRA_TEXT, caption)
                     setPackage(pkg)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                       addFlags(
+                           Intent.FLAG_ACTIVITY_NEW_TASK or
+                               Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                               Intent.FLAG_ACTIVITY_SINGLE_TOP
+                       )
                     // WhatsApp status share target when available
                     putExtra("jid", "status@broadcast")
                 }
