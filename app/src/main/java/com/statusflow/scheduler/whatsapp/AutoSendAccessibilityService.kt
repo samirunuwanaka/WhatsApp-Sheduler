@@ -105,7 +105,7 @@ class AutoSendAccessibilityService : AccessibilityService() {
                 }
             }
         }
-        return false
+        return clickLikelyComposerAction(root)
     }
 
     private fun clickStatusPublish(root: AccessibilityNodeInfo): Boolean {
@@ -141,6 +141,23 @@ class AutoSendAccessibilityService : AccessibilityService() {
             }
         }
         return false
+    }
+
+    private fun clickLikelyComposerAction(root: AccessibilityNodeInfo): Boolean {
+        val rootBounds = Rect()
+        root.getBoundsInScreen(rootBounds)
+        if (rootBounds.width() <= 0 || rootBounds.height() <= 0) return false
+        return traverse(root) { node ->
+            if (!node.isVisibleToUser || !node.isClickable) return@traverse false
+            val bounds = Rect()
+            node.getBoundsInScreen(bounds)
+            val className = node.className?.toString().orEmpty()
+            val isButton = className.contains("Button", ignoreCase = true) ||
+                className.contains("ImageView", ignoreCase = true)
+            val isLowerRight = bounds.centerX() > rootBounds.left + rootBounds.width() * 0.62f &&
+                bounds.centerY() > rootBounds.top + rootBounds.height() * 0.58f
+            isButton && isLowerRight && performClick(node)
+        }
     }
 
     private fun performClick(node: AccessibilityNodeInfo): Boolean {
