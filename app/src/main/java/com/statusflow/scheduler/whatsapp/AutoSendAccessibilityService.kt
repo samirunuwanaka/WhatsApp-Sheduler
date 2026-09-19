@@ -71,17 +71,10 @@ class AutoSendAccessibilityService : AccessibilityService() {
             "status" -> clickStatusPublish(root) || clickByContentDescription(root, listOf("Send", "send", "Post", "post"))
             else -> clickSend(root)
         }
-        if (!clicked) return false
-
-        val scheduleId = prefs.getLong(WhatsAppSender.KEY_SCHEDULE_ID, -1L)
-        handler.removeCallbacks(retry)
-        WhatsAppSender.disarm(this)
-        if (scheduleId >= 0) {
-            CoroutineScope(Dispatchers.IO).launch {
-                StatusFlowApp.instance.repository.markStatus(scheduleId, ScheduleStatus.SENT)
-            }
+        if (clicked) {
+            handler.postDelayed({ confirmSendAfterTap() }, CONFIRM_DELAY_MS)
         }
-        return true
+        return clicked
     }
 
     private fun clickSend(root: AccessibilityNodeInfo): Boolean {
@@ -157,13 +150,38 @@ class AutoSendAccessibilityService : AccessibilityService() {
         val path = Path().apply {
             moveTo(bounds.centerX().toFloat(), bounds.centerY().toFloat())
         }
-        return dispatchGesture(
+        val accepted = dispatchGesture(
             GestureDescription.Builder()
                 .addStroke(GestureDescription.StrokeDescription(path, 0, 80))
                 .build(),
-            null,
+            object : GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    handler.postDelayed({ confirmSendAfterTap() }, CONFIRM_DELAY_MS)
+                }
+
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    handler.postDelayed(retry, RETRY_DELAY_MS)
+                }
+            },
             null
         )
+        return accepted
+    }
+
+    private fun confirmSendAfterTap() {
+        val prefs = getSharedPreferences(WhatsAppSender.PREFS, MODE_PRIVATE)
+        if (!prefs.getBoolean(WhatsAppSender.KEY_ARMED, false)) return
+        val root = rootInActiveWindow ?: return
+        val packageName = root.packageName?.toString().orEmpty()
+        if (packageName != "com.whatsapp" && packageName != "com.whatsapp.w4b") return
+        val scheduleId = prefs.getLong(WhatsAppSender.KEY_SCHEDULE_ID, -1L)
+        handler.removeCallbacks(retry)
+        WhatsAppSender.disarm(this)
+        if (scheduleId >= 0) {
+            CoroutineScope(Dispatchers.IO).launch {
+                StatusFlowApp.instance.repository.markStatus(scheduleId, ScheduleStatus.SENT)
+            }
+        }
     }
 
     private fun traverse(node: AccessibilityNodeInfo, matcher: (AccessibilityNodeInfo) -> Boolean): Boolean {
@@ -185,5 +203,6 @@ class AutoSendAccessibilityService : AccessibilityService() {
     companion object {
         private const val RETRY_DELAY_MS = 500L
         private const val MAX_ATTEMPTS = 120
+        private const val CONFIRM_DELAY_MS = 1_000L
     }
 }
