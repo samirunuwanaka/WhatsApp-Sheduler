@@ -12,6 +12,7 @@ captures/
 .DS_Store
 Thumbs.db
 
-# Keystores
+# Keystores / signing
 *.jks
 *.keystore
+keystore.properties

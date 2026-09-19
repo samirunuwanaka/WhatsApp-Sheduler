@@ -24,18 +24,22 @@ Personal WhatsApp **message** and **status** scheduler for Android. Schedules ar
 
 ### Commands (Windows PowerShell)
 
+Create `keystore.properties` in the project root (gitignored) pointing at a `.jks` keystore, then:
+
 ```powershell
 cd "D:\Ideas\WhatsApp Status message sheduler"
 .\gradlew.bat assembleRelease
 ```
 
-Release APK path:
+Signed release APK path:
 
 ```text
-app\build\outputs\apk\release\app-release-unsigned.apk
+app\build\outputs\apk\release\app-release.apk
 ```
 
-Debug APK (easier for USB install during development):
+> Do **not** install an unsigned APK — Android will show *App not installed as package appears to be invalid*.
+
+Debug APK (auto-signed; fine for USB install during development):
 
 ```powershell
 .\gradlew.bat assembleDebug
@@ -44,7 +48,6 @@ Debug APK (easier for USB install during development):
 ```text
 app\build\outputs\apk\debug\app-debug.apk
 ```
-
 ## Install on a phone with USB only (no Play Store / no third-party APK sites)
 
 You only need: a USB cable, the phone, and the official **Android SDK Platform-Tools** `adb` (or Android Studio). No APK mirror apps required.
@@ -70,13 +73,22 @@ You only need: a USB cable, the phone, and the official **Android SDK Platform-T
 In PowerShell:
 
 ```powershell
-cd C:\platform-tools
-.\adb.exe devices
-.\adb.exe install -r "D:\Ideas\WhatsApp Status message sheduler\app\build\outputs\apk\debug\app-debug.apk"
+$adb = "D:\Android\Sdk\platform-tools\adb.exe"
+& $adb devices
+& $adb install -r "D:\Ideas\WhatsApp Status message sheduler\app\build\outputs\apk\release\app-release.apk"
 ```
 
 - `adb devices` must list your device as `device` (not `unauthorized`).
 - `-r` replaces an older install if present.
+
+**Xiaomi / Redmi / POCO (MIUI):** if you see `INSTALL_FAILED_USER_RESTRICTED`, open **Settings → Additional settings → Developer options** and turn on:
+
+1. **Install via USB**
+2. **USB debugging (Security settings)** (if shown)
+
+You may need a Mi Account for those toggles. Keep the phone unlocked, accept any install prompt, then run `adb install` again.
+
+Alternate: the signed APK is also copied to **Download/StatusFlow.apk** on the phone — open it in Files and tap Install (allow “Install unknown apps” for Files if asked).
 
 If install is blocked by the phone, open the notification / prompt and allow installation from that USB session, then run the `adb install` command again.
 
