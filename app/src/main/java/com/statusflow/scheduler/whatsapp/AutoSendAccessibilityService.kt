@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 class AutoSendAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var attemptCount = 0
+    private var activeScheduleId = -1L
     private val retry = object : Runnable {
         override fun run() {
             if (trySend()) return
@@ -47,6 +48,12 @@ class AutoSendAccessibilityService : AccessibilityService() {
         if (event == null) return
         val prefs = getSharedPreferences(WhatsAppSender.PREFS, MODE_PRIVATE)
         if (!prefs.getBoolean(WhatsAppSender.KEY_ARMED, false)) return
+        val scheduleId = prefs.getLong(WhatsAppSender.KEY_SCHEDULE_ID, -1L)
+        if (scheduleId != activeScheduleId) {
+            activeScheduleId = scheduleId
+            attemptCount = 0
+            handler.removeCallbacks(retry)
+        }
 
         val root = rootInActiveWindow ?: return
         val packageName = root.packageName?.toString().orEmpty()
@@ -174,6 +181,10 @@ class AutoSendAccessibilityService : AccessibilityService() {
         val root = rootInActiveWindow ?: return
         val packageName = root.packageName?.toString().orEmpty()
         if (packageName != "com.whatsapp" && packageName != "com.whatsapp.w4b") return
+        if (sendControlStillVisible(root)) {
+            handler.postDelayed(retry, RETRY_DELAY_MS)
+            return
+        }
         val scheduleId = prefs.getLong(WhatsAppSender.KEY_SCHEDULE_ID, -1L)
         handler.removeCallbacks(retry)
         WhatsAppSender.disarm(this)
@@ -181,6 +192,27 @@ class AutoSendAccessibilityService : AccessibilityService() {
             CoroutineScope(Dispatchers.IO).launch {
                 StatusFlowApp.instance.repository.markStatus(scheduleId, ScheduleStatus.SENT)
             }
+        }
+    }
+
+    private fun sendControlStillVisible(root: AccessibilityNodeInfo): Boolean {
+        val ids = listOf(
+            "com.whatsapp:id/send",
+            "com.whatsapp:id/send_button",
+            "com.whatsapp:id/conversation_entry_action_button",
+            "com.whatsapp:id/status_send",
+            "com.whatsapp.w4b:id/send",
+            "com.whatsapp.w4b:id/send_button",
+            "com.whatsapp.w4b:id/conversation_entry_action_button"
+        )
+        if (ids.any { id -> root.findAccessibilityNodeInfosByViewId(id)?.any { it.isVisibleToUser } == true }) {
+            return true
+        }
+        return traverse(root) { node ->
+            val text = node.text?.toString().orEmpty()
+            val description = node.contentDescription?.toString().orEmpty()
+            (text.equals("Send", ignoreCase = true) ||
+                description.contains("send", ignoreCase = true)) && node.isVisibleToUser
         }
     }
 
