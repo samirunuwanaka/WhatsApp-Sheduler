@@ -134,6 +134,10 @@ app/src/main/java/com/statusflow/scheduler/
   whatsapp/      Intents + Accessibility auto-send
   ui/            Compose screens & theme
 ```
+## Feature Improvements
+- [ ] Recurring shedules
+- [ ] Add the inage or video as reference or copy
+- [ ] Send broadcast messages within set of contacts show WhatsApp limit and if exceed send messages with time gap in the time window that WhatsApp allows
 
 ## License
 
